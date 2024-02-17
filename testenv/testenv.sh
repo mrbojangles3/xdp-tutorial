@@ -23,7 +23,7 @@ CLEANUP_FUNC=
 STATEFILE=
 CMD=
 NS=
-XDP_LOADER=./xdp_loader
+XDP_LOADER=./xdp-loader
 XDP_STATS=./xdp_stats
 LEGACY_IP=0
 USE_VLAN=0
@@ -450,7 +450,7 @@ xdp_load()
     get_nsname && ensure_nsname
 
     [ -x "$XDP_LOADER" ] || die "Loader '$XDP_LOADER' is not executable"
-    $XDP_LOADER --dev "$NS" "$@"
+    $XDP_LOADER load "$NS" "$@"
 }
 
 xdp_unload()
@@ -458,7 +458,7 @@ xdp_unload()
     get_nsname && ensure_nsname
 
     [ -x "$XDP_LOADER" ] || die "Loader '$XDP_LOADER' is not executable"
-    $XDP_LOADER --dev "$NS" --unload "$@"
+    $XDP_LOADER unload "$NS" "$@"
 }
 
 xdp_stats()
