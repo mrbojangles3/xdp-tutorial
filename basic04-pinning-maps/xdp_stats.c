@@ -194,6 +194,10 @@ static void stats_collect(int map_fd, __u32 map_type,
 static void stats_poll(int map_fd, __u32 map_type, int interval)
 {
 	struct stats_record prev, record = { 0 };
+	//union bpf_attr info = { 0 };
+	struct bpf_map_info info = { 0 };
+	__u32 info_size = sizeof(&info);
+	int map_id,ret;
 
 	/* Trick to pretty printf with thousands separators use %' */
 	setlocale(LC_NUMERIC, "en_US");
@@ -202,10 +206,24 @@ static void stats_poll(int map_fd, __u32 map_type, int interval)
 	stats_collect(map_fd, map_type, &record);
 	usleep(1000000/4);
 
+	// get map id, use it to find the new fd, if it changes
+	ret = bpf_obj_get_info_by_fd(map_fd, &info, &info_size);
+	if(ret < 0){
+		exit(1);
+	}
+	map_id = info.id;
+	printf("BPF map id: %d\n",map_id);
+	
+	//how to detect a change in fd?
+	/* the file descriptor passed into this function could be bad at some point
+	 * it points to a struct bpf_map_info in bpf.h. That struct has a
+	 * name field. We can take the name + the known path and make something with it?
+	 */
 	while (1) {
 		prev = record; /* struct copy */
 		stats_collect(map_fd, map_type, &record);
 		stats_print(&record, &prev);
+	    printf("BPF map id: %d\n",map_id);
 		sleep(interval);
 	}
 }
@@ -248,6 +266,7 @@ int main(int argc, char **argv)
 	}
 
 	stats_map_fd = open_bpf_map_file(pin_dir, "xdp_stats_map", &info);
+	printf("pin dir: %s\n",pin_dir);
 	if (stats_map_fd < 0) {
 		return EXIT_FAIL_BPF;
 	}
